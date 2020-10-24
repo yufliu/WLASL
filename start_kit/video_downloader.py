@@ -17,7 +17,7 @@ def request_video(url, referer=''):
 
     headers = {'User-Agent': user_agent,
                }
-    
+
     if referer:
         headers['Referer'] = referer
 
@@ -42,22 +42,22 @@ def download_youtube(url, dirname, video_id):
     raise NotImplementedError("Urllib cannot deal with YouTube links.")
 
 
-def download_aslpro(url, dirname, video_id):
-    saveto = os.path.join(dirname, '{}.swf'.format(video_id))
+def download_aslpro(url, dirname, video_id, gloss):
+    saveto = os.path.join(dirname, '{}-{}.swf'.format(gloss, video_id))
     if os.path.exists(saveto):
         logging.info('{} exists at {}'.format(video_id, saveto))
-        return 
+        return
 
     data = request_video(url, referer='http://www.aslpro.com/cgi-bin/aslpro/aslpro.cgi')
     save_video(data, saveto)
 
 
-def download_others(url, dirname, video_id):
-    saveto = os.path.join(dirname, '{}.mp4'.format(video_id))
+def download_others(url, dirname, video_id, gloss):
+    saveto = os.path.join(dirname, '{}-{}.mp4'.format(gloss, video_id))
     if os.path.exists(saveto):
         logging.info('{} exists at {}'.format(video_id, saveto))
-        return 
-    
+        return
+
     data = request_video(url)
     save_video(data, saveto)
 
@@ -84,17 +84,17 @@ def download_nonyt_videos(indexfile, saveto='raw_videos'):
         for inst in instances:
             video_url = inst['url']
             video_id = inst['video_id']
-            
+
             logging.info('gloss: {}, video: {}.'.format(gloss, video_id))
 
-            download_method = select_download_method(video_url)    
-            
+            download_method = select_download_method(video_url)
+
             if download_method == download_youtube:
                 logging.warning('Skipping YouTube video {}'.format(video_id))
                 continue
 
             try:
-                download_method(video_url, saveto, video_id)
+                download_method(video_url, saveto, video_id, gloss)
             except Exception as e:
                 logging.error('Unsuccessful downloading - video {}'.format(video_id))
 
@@ -108,10 +108,10 @@ def check_youtube_dl_version():
 
 def download_yt_videos(indexfile, saveto='raw_videos'):
     content = json.load(open(indexfile))
-    
+
     if not os.path.exists(saveto):
         os.mkdir(saveto)
-    
+
     for entry in content:
         gloss = entry['gloss']
         instances = entry['instances']
@@ -131,7 +131,7 @@ def download_yt_videos(indexfile, saveto='raw_videos'):
                 cmd = cmd.format(video_url, saveto + os.path.sep)
 
                 rv = os.system(cmd)
-                
+
                 if not rv:
                     logging.info('Finish downloading youtube video url {}'.format(video_url))
                 else:
@@ -139,7 +139,7 @@ def download_yt_videos(indexfile, saveto='raw_videos'):
 
                 # please be nice to the host - take pauses and avoid spamming
                 time.sleep(random.uniform(1.0, 1.5))
-    
+
 
 if __name__ == '__main__':
     logging.info('Start downloading non-youtube videos.')
@@ -148,4 +148,3 @@ if __name__ == '__main__':
     check_youtube_dl_version()
     logging.info('Start downloading youtube videos.')
     download_yt_videos('WLASL_v0.3.json')
-
